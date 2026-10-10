@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   一键准备 Android 构建工具链（JDK 17 + Android SDK + Gradle），并生成 APK 签名密钥。
 

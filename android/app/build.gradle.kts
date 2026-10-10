@@ -5,6 +5,17 @@ plugins {
 
 val keystoreFile = rootProject.file("keystore/lan-audio.jks")
 
+// 口令/别名可用环境变量覆盖（CI 用 Secret 注入），未设置或为空时回落到本地开发默认值
+fun envOr(name: String, fallback: String) = System.getenv(name)?.takeIf { it.isNotBlank() } ?: fallback
+
+// 版本号可由 -PlasVersion=x.y.z 传入（CI 用 tag 名），默认 1.0.0；versionCode 由版本号推导
+val lasVersion = (project.findProperty("lasVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.0.0"
+val lasVersionCode = lasVersion.split(".").let { p ->
+    (p.getOrNull(0)?.toIntOrNull() ?: 1) * 10000 +
+        (p.getOrNull(1)?.toIntOrNull() ?: 0) * 100 +
+        (p.getOrNull(2)?.toIntOrNull() ?: 0)
+}
+
 android {
     namespace = "com.lasaudio"
     compileSdk = 35
@@ -13,8 +24,8 @@ android {
         applicationId = "com.lasaudio"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = lasVersionCode
+        versionName = lasVersion
         resourceConfigurations += listOf("zh", "en")
     }
 
@@ -24,9 +35,9 @@ android {
                 storeFile = keystoreFile
                 // 正式发布请用环境变量 LAS_KEYSTORE_PASSWORD / LAS_KEYSTORE_ALIAS 提供，
                 // 默认值仅供本地开发（与 scripts/setup_toolchain.ps1 生成密钥时一致）。
-                val ksPass = System.getenv("LAS_KEYSTORE_PASSWORD") ?: "lanaudio"
+                val ksPass = envOr("LAS_KEYSTORE_PASSWORD", "lanaudio")
                 storePassword = ksPass
-                keyAlias = System.getenv("LAS_KEYSTORE_ALIAS") ?: "lanaudio"
+                keyAlias = envOr("LAS_KEYSTORE_ALIAS", "lanaudio")
                 keyPassword = ksPass
             }
         }

@@ -38,6 +38,12 @@ powershell -ExecutionPolicy Bypass -File scripts\build_desktop.ps1
 # 依赖框架的小体积版本（需要目标机安装 .NET 10 Desktop Runtime）
 powershell -ExecutionPolicy Bypass -File scripts\build_desktop.ps1 -FrameworkDependent
 
+# 指定版本号（影响产物文件名；CI 用 tag 名传入）
+powershell -ExecutionPolicy Bypass -File scripts\build_desktop.ps1 -Version 1.0.1
+
+# 无桌面环境（服务器 / CI）时跳过 GUI 布局自检，避免卡住
+powershell -ExecutionPolicy Bypass -File scripts\build_desktop.ps1 -SkipUiCheck
+
 # 直接使用 dotnet 命令
 dotnet publish desktop\src\LanAudioStream.Desktop\LanAudioStream.Desktop.csproj `
     -c Release -r win-x64 --self-contained true `
@@ -58,6 +64,7 @@ dotnet publish desktop\src\LanAudioStream.Desktop\LanAudioStream.Desktop.csproj 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\build_android.ps1          # release（已签名）
 powershell -ExecutionPolicy Bypass -File scripts\build_android.ps1 -Debug   # debug
+powershell -ExecutionPolicy Bypass -File scripts\build_android.ps1 -Version 1.0.1   # 指定版本（产物名与 APK 内部 versionName/versionCode）
 ```
 
 等价的手工命令：
@@ -132,3 +139,6 @@ $env:ANDROID_HOME = (Resolve-Path "..\_las_toolchain").Path + "\sdk"   # 默认�
 | `validateSdkPath ... 语法不正确` | `local.properties` 里 `sdk.dir` 用了单反斜杠；脚本已改成正斜杠 |
 | Gradle 报 `-Dorg.gradle.java.home=...` 被当作任务名 | PowerShell 需加引号：`"-Dorg.gradle.java.home=$java"` |
 | 下载慢 | 脚本已内置清华/腾讯云镜像；`-Force` 可重新下载 |
+| 脚本中文变乱码 / PowerShell 报「意外的标记」 | `.ps1` 必须带 **UTF-8 BOM**：Windows PowerShell 5.1 对无 BOM 的 UTF-8 脚本会按 GBK 解码，吞掉字符串里的引号导致语法报错。编辑器设置见根目录 `.editorconfig` 的 `[*.ps1] charset = utf-8-bom` |
+| 构建卡在「界面自检」 | 服务器 / CI 无桌面会话时加 `-SkipUiCheck` 跳过（GUI 布局自检只在本机有意义） |
+| 想自动化构建与发布 | 仓库内置 `.github/workflows/build.yml`：push 到 `main` 自动构建验证，推 `v*` tag 自动上传到 Release；APK 签名走仓库 Secrets（见 README §6.1） |

@@ -9,7 +9,9 @@
 param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x64",
-    [switch]$FrameworkDependent
+    [string]$Version = "1.0.0",
+    [switch]$FrameworkDependent,
+    [switch]$SkipUiCheck
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,7 +21,7 @@ $toolProject = Join-Path $root "desktop\tools\LanAudioStream.LoopbackClient\LanA
 $dist = Join-Path $root "dist"
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
-$version = "1.0.0"
+$version = $Version
 Write-Host "==> 构建桌面端 ($Configuration / $Runtime)" -ForegroundColor Cyan
 
 $selfContained = if ($FrameworkDependent) { "false" } else { "true" }
@@ -48,24 +50,28 @@ $target = Join-Path $dist ("LanAudioStream-$version-win-x64" + $(if ($FrameworkD
 Copy-Item $exe $target -Force
 Copy-Item (Join-Path $toolPublish "LoopbackClient.exe") (Join-Path $dist "LoopbackClient-$version-win-x64.exe") -Force
 
-Write-Host "==> 界面自检（当前 DPI 下的文字重叠/裁切检查）" -ForegroundColor Cyan
-$dumpFile = Join-Path $publishDir "layout-dump.txt"
-if (Test-Path $dumpFile) { Remove-Item $dumpFile -Force }
-& $exe --dumpui | Out-Null
-Start-Sleep -Milliseconds 500
-if (Test-Path $dumpFile) {
-    $dump = Get-Content $dumpFile -Raw -Encoding UTF8
-    $head = ($dump -split "`n")[0]
-    Write-Host "  $head"
-    if ($dump -match "OVERLAPS=0 CLIPPED=0") {
-        Write-Host "  界面布局检查通过 (OVERLAPS=0 CLIPPED=0)" -ForegroundColor Green
-    } else {
-        $bad = ($dump -split "`n" | Where-Object { $_ -match "OVERLAP|fits=False" } | Select-Object -First 6) -join "`n"
-        Write-Host "  界面布局存在重叠/裁切：" -ForegroundColor Yellow
-        Write-Host $bad
-    }
+if ($SkipUiCheck) {
+    Write-Host "==> 跳过界面自检（-SkipUiCheck：无桌面环境时使用，例如 CI）" -ForegroundColor DarkYellow
 } else {
-    Write-Host "  未生成 layout-dump.txt（跳过）" -ForegroundColor DarkYellow
+    Write-Host "==> 界面自检（当前 DPI 下的文字重叠/裁切检查）" -ForegroundColor Cyan
+    $dumpFile = Join-Path $publishDir "layout-dump.txt"
+    if (Test-Path $dumpFile) { Remove-Item $dumpFile -Force }
+    & $exe --dumpui | Out-Null
+    Start-Sleep -Milliseconds 500
+    if (Test-Path $dumpFile) {
+        $dump = Get-Content $dumpFile -Raw -Encoding UTF8
+        $head = ($dump -split "`n")[0]
+        Write-Host "  $head"
+        if ($dump -match "OVERLAPS=0 CLIPPED=0") {
+            Write-Host "  界面布局检查通过 (OVERLAPS=0 CLIPPED=0)" -ForegroundColor Green
+        } else {
+            $bad = ($dump -split "`n" | Where-Object { $_ -match "OVERLAP|fits=False" } | Select-Object -First 6) -join "`n"
+            Write-Host "  界面布局存在重叠/裁切：" -ForegroundColor Yellow
+            Write-Host $bad
+        }
+    } else {
+        Write-Host "  未生成 layout-dump.txt（跳过）" -ForegroundColor DarkYellow
+    }
 }
 
 $hash = (Get-FileHash $target -Algorithm SHA256).Hash

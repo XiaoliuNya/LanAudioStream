@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   构建 Android APK（release 已签名 / debug）。
 
@@ -16,6 +16,7 @@ param(
     [string]$JavaHome = "",
     [string]$SdkRoot = "",
     [string]$GradleHome = "",
+    [string]$Version = "1.0.0",
     [switch]$Debug
 )
 
@@ -89,7 +90,7 @@ $apkDir = if ($Debug) {
 $apk = Get-ChildItem $apkDir -Filter "*.apk" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $apk) { throw "未找到 APK: $apkDir" }
 
-$name = "LanAudioStream-1.0.0" + $(if ($Debug) { "-debug" } else { "" }) + ".apk"
+$name = "LanAudioStream-$Version" + $(if ($Debug) { "-debug" } else { "" }) + ".apk"
 $target = Join-Path $dist $name
 Copy-Item $apk.FullName $target -Force
 
