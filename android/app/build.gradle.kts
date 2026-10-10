@@ -22,9 +22,12 @@ android {
         if (keystoreFile.exists()) {
             create("release") {
                 storeFile = keystoreFile
-                storePassword = "lanaudio"
-                keyAlias = "lanaudio"
-                keyPassword = "lanaudio"
+                // 正式发布请用环境变量 LAS_KEYSTORE_PASSWORD / LAS_KEYSTORE_ALIAS 提供，
+                // 默认值仅供本地开发（与 scripts/setup_toolchain.ps1 生成密钥时一致）。
+                val ksPass = System.getenv("LAS_KEYSTORE_PASSWORD") ?: "lanaudio"
+                storePassword = ksPass
+                keyAlias = System.getenv("LAS_KEYSTORE_ALIAS") ?: "lanaudio"
+                keyPassword = ksPass
             }
         }
     }

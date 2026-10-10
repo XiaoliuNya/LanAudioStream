@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   构建 Android APK（release 已签名 / debug）。
 
@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $androidDir = Join-Path $root "android"
 $dist = Join-Path $root "dist"
-$toolchain = "C:\Users\Yuri\Desktop\_las_toolchain"
+$toolchain = Join-Path (Split-Path -Parent $root) "_las_toolchain"   # 内置工具链（仓库同级）
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
 function Find-JavaHome {

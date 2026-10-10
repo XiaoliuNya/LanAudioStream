@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   一键准备 Android 构建工具链（JDK 17 + Android SDK + Gradle），并生成 APK 签名密钥。
 
@@ -13,7 +13,7 @@
   powershell -ExecutionPolicy Bypass -File scripts\setup_toolchain.ps1 -Force
 #>
 param(
-    [string]$ToolchainDir = "C:\Users\Yuri\Desktop\_las_toolchain",
+    [string]$ToolchainDir = "",
     [string]$AndroidPlatform = "android-35",
     [string]$BuildTools = "35.0.0",
     [switch]$Force
@@ -21,6 +21,12 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+# 默认安装到仓库同级目录（仓库在 X\LanAudioStream 时，工具链在 X\_las_toolchain），可用 -ToolchainDir 覆盖
+if (-not $ToolchainDir) {
+    $repoRoot = Split-Path -Parent $PSScriptRoot
+    $ToolchainDir = Join-Path (Split-Path -Parent $repoRoot) "_las_toolchain"
+}
 New-Item -ItemType Directory -Force -Path $ToolchainDir | Out-Null
 
 function Download-File {
@@ -106,11 +112,14 @@ if (-not (Test-Path (Join-Path $sdk "platforms\$AndroidPlatform\android.jar"))) 
 
 Write-Host "==> 4/4 生成 APK 签名密钥（若不存在）" -ForegroundColor Cyan
 $keystore = Join-Path (Split-Path -Parent $PSScriptRoot) "android\keystore\lan-audio.jks"
+# 正式发布请用环境变量 LAS_KEYSTORE_PASSWORD / LAS_KEYSTORE_ALIAS 提供，默认值仅供本地开发
+$ksPass = if ($env:LAS_KEYSTORE_PASSWORD) { $env:LAS_KEYSTORE_PASSWORD } else { "lanaudio" }
+$ksAlias = if ($env:LAS_KEYSTORE_ALIAS) { $env:LAS_KEYSTORE_ALIAS } else { "lanaudio" }
 if (-not (Test-Path $keystore)) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $keystore) | Out-Null
     & (Join-Path $javaHome "bin\keytool.exe") -genkeypair -v -keystore $keystore -storetype PKCS12 `
-        -alias lanaudio -keyalg RSA -keysize 2048 -validity 10000 `
-        -storepass lanaudio -keypass lanaudio `
+        -alias $ksAlias -keyalg RSA -keysize 2048 -validity 10000 `
+        -storepass $ksPass -keypass $ksPass `
         -dname "CN=LanAudioStream, OU=Dev, O=LanAudioStream, L=NA, ST=NA, C=CN" | Out-Null
 }
 

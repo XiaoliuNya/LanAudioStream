@@ -17,7 +17,7 @@
 powershell -ExecutionPolicy Bypass -File scripts\setup_toolchain.ps1
 ```
 
-默认安装到 `C:\Users\Yuri\Desktop\_las_toolchain`：
+默认安装到**仓库同级**的 `_las_toolchain`（仓库位于 `X\LanAudioStream` 时即 `X\_las_toolchain`）：
 ```
 _las_toolchain\
 ├─ jdk-17.0.20.1+1\        JDK 17
@@ -63,14 +63,16 @@ powershell -ExecutionPolicy Bypass -File scripts\build_android.ps1 -Debug   # de
 等价的手工命令：
 
 ```powershell
-$env:JAVA_HOME = "C:\Users\Yuri\Desktop\_las_toolchain\jdk-17.0.20.1+1"
-"# generated`nsdk.dir=C:/Users/Yuri/Desktop/_las_toolchain/sdk" > android\local.properties
+$tc = (Resolve-Path "..\_las_toolchain").Path      # 默认位置（仓库同级）
+$env:JAVA_HOME = "$tc\jdk-17.0.20.1+1"
+"sdk.dir=$($tc -replace '\\','/')/sdk" > android\local.properties
 cd android
-C:\Users\Yuri\Desktop\_las_toolchain\gradle-8.11.1\bin\gradle.bat assembleRelease --no-daemon
+& "$tc\gradle-8.11.1\bin\gradle.bat" assembleRelease --no-daemon
 # 产物：android\app\build\outputs\apk\release\app-release.apk
 ```
 
 - 签名密钥：`android/keystore/lan-audio.jks`（**本地生成，不入库**；口令为开发用默认值，见 `scripts/setup_toolchain.ps1`，正式发布请改用环境变量或密钥库单独保管）
+- 签名口令覆盖：设置环境变量 `LAS_KEYSTORE_PASSWORD`（口令）与 `LAS_KEYSTORE_ALIAS`（别名），`scripts/setup_toolchain.ps1` 生成密钥和 Gradle 签名会共用这两个变量
 - 依赖：仅 `io.github.jaredmdobson:concentus:1.0.2`（纯 Java Opus 解码，**无 NDK / 无 ABI 限制**）
 - 校验签名：`sdk\build-tools\35.0.0\apksigner.bat verify --print-certs <apk>`
 
@@ -96,9 +98,10 @@ powershell -ExecutionPolicy Bypass -File scripts\run_conformance.ps1
 `android/tools/CoreProbe.java` 直接把 APK 里那份纯 Java 核心代码跑在桌面 JVM 上：
 
 ```powershell
-$JAVAC = "C:\Users\Yuri\Desktop\_las_toolchain\jdk-17.0.20.1+1\bin\javac.exe"
-$JAVA  = "C:\Users\Yuri\Desktop\_las_toolchain\jdk-17.0.20.1+1\bin\java.exe"
-$CP    = "C:\Users\Yuri\Desktop\_las_toolchain\concentus.jar"   # 或 Gradle 缓存中的 concentus-1.0.2.jar
+$tc    = (Resolve-Path "..\_las_toolchain").Path   # 默认位置（仓库同级）
+$JAVAC = "$tc\jdk-17.0.20.1+1\bin\javac.exe"
+$JAVA  = "$tc\jdk-17.0.20.1+1\bin\java.exe"
+$CP    = "$tc\concentus.jar"   # 或 Gradle 缓存中的 concentus-1.0.2.jar
 New-Item -ItemType Directory -Force build-probe | Out-Null
 & $JAVAC --release 17 -cp $CP -d build-probe (Get-ChildItem -Recurse android\app\src\main\java\com\lasaudio\core\*.java).FullName android\tools\CoreProbe.java
 
@@ -113,7 +116,7 @@ New-Item -ItemType Directory -Force build-probe | Out-Null
 ## 5. 真机安装
 
 ```powershell
-$env:ANDROID_HOME = "C:\Users\Yuri\Desktop\_las_toolchain\sdk"
+$env:ANDROID_HOME = (Resolve-Path "..\_las_toolchain").Path + "\sdk"   # 默认位置（仓库同级）
 & "$env:ANDROID_HOME\platform-tools\adb.exe" install -r dist\LanAudioStream-1.0.0.apk
 & "$env:ANDROID_HOME\platform-tools\adb.exe" logcat -s "LANAudio"   # 如需排查
 ```

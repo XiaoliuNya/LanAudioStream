@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   在桌面 JVM 上运行 Android 端核心代码（发现/握手/抖动缓冲/Opus 解码），无需真机即可验证。
 
@@ -23,7 +23,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$toolchain = "C:\Users\Yuri\Desktop\_las_toolchain"
+$toolchain = Join-Path (Split-Path -Parent $root) "_las_toolchain"   # 内置工具链（仓库同级）
 $buildDir = Join-Path $root "dist\core-probe"
 
 function Find-JavaHome {
