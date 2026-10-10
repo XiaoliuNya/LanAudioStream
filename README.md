@@ -1,3 +1,5 @@
+**[English](README.en.md) | 简体中文**
+
 # LanAudioStream —— 局域网纯音频串流（Windows → Android）
 
 把 Windows 11 正在播放的**系统声音**，以低延迟、高质量的方式串流到同一局域网的 Android 手机上播放。
