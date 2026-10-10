@@ -1,0 +1,29 @@
+#!/bin/sh
+# 为提交自动追加 AI 协作标注。
+#
+# 背景：本仓库的代码、测试与文档均由 AI 编码助手（DSH，DeepSeek Harness）生成，
+# 人类参与者主要负责提出需求、在使用中发现问题并交回 AI 修复。
+#
+# 注意：这里刻意**不用** `Co-authored-by:` —— GitHub 会把该 trailer 的邮箱
+# 解析为真实账号，曾经用 <dsh-ai@users.noreply.github.com> 时误把一位
+# 同名的陌生用户算成了共同作者。改用自定义 trailer，只作为纯文本说明。
+#
+# 启用方式（克隆后执行一次）：git config core.hooksPath .githooks
+# 跳过方式：git commit --no-verify
+#
+# 参数：$1 = 提交信息文件路径，$2 = 来源（message/template/merge/squash/commit）
+
+msg_file="$1"
+source="$2"
+
+[ -z "$msg_file" ] && exit 0
+
+# 合并/压缩提交不追加
+case "$source" in
+    merge|squash) exit 0 ;;
+esac
+
+# 已存在标注则不重复追加
+grep -qi '^AI-Assisted-by: DSH' "$msg_file" && exit 0
+
+printf '\nAI-Assisted-by: DSH (DeepSeek Harness)\n' >> "$msg_file"

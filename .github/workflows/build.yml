@@ -1,0 +1,125 @@
+name: 构建与发布
+
+# 默认最小权限；仅 publish 任务在自身范围内提升为 contents: write
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+  desktop:
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 构建桌面端（自包含单文件 exe + 自检客户端）
+        shell: pwsh
+        run: ./scripts/build_desktop.ps1 -Version "${{ needs.version.outputs.version }}" -SkipUiCheck
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-desktop
+          path: |
+            dist/LanAudioStream-*-win-x64.exe
+            dist/LoopbackClient-*-win-x64.exe
+          if-no-files-found: error
+
+  android:
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      KEYSTORE_B64: ${{ secrets.LAS_KEYSTORE_BASE64 }}
+      LAS_KEYSTORE_PASSWORD: ${{ secrets.LAS_KEYSTORE_PASSWORD }}
+      LAS_KEYSTORE_ALIAS: ${{ secrets.LAS_KEYSTORE_ALIAS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35 build-tools;35.0.0 platform-tools'
+      - name: 写入签名密钥（仅当已配置 Secret）
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          mkdir -p android/keystore
+          printf '%s' "$KEYSTORE_B64" | base64 -d > android/keystore/lan-audio.jks
+          ls -l android/keystore/lan-audio.jks
+      - name: 构建 release APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon -PlasVersion="$VERSION"
+      - name: 整理并校验产物
+        run: |
+          mkdir -p out
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          cp "$APK" "out/LanAudioStream-${VERSION}.apk"
+          echo "产物: out/LanAudioStream-${VERSION}.apk"
+          if [ -n "$KEYSTORE_B64" ]; then
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "out/LanAudioStream-${VERSION}.apk" | head -6
+          else
+            echo "::warning::未配置 LAS_KEYSTORE_BASE64，产物为未签名 APK（仅供测试，不能安装到真机做正式分发）"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-android
+          path: out/*.apk
+          if-no-files-found: error
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [version, desktop, android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: 生成 SHA256SUMS.txt
+        run: |
+          cd dist
+          sha256sum LanAudioStream-*.exe LanAudioStream-*.apk LoopbackClient-*.exe > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: 上传到 GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          # 本 job 没有 checkout，必须显式指定仓库（GH_REPO / -R），否则 gh 会报 "not a git repository"
+          gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 || gh release create "$TAG" -R "$REPO" \
+            --title "LanAudioStream $TAG" \
+            --notes "本页附件由 GitHub Actions 自动构建（源码见仓库）。SHA256 校验值见 SHA256SUMS.txt。"
+          gh release upload "$TAG" dist/* -R "$REPO" --clobber

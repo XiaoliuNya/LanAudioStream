@@ -4,6 +4,9 @@
 桌面端基于 **WASAPI Loopback** 抓取系统混音，**Opus** 编码，通过自研 **UDP 协议（LAS1）** 传输；
 手机端用 **AudioTrack** 播放，实时绘制延迟/码率/速度/丢包/抖动曲线，并在本机统计左右声道响度电平。
 
+> **AI 生成声明**：本项目的**全部代码、测试与文档均由 AI 编码助手（DSH，DeepSeek Harness）生成**；
+> 人类参与者的角色是提出需求、在实际使用中发现 Bug 并交回 AI 修复。详见 **§10**。
+
 ```
 ┌─────────────────────── Windows 11 桌面端 ───────────────────────┐
 │ WASAPI Loopback ─► 48kHz/2ch float ─► Opus(10ms) ─► UDP 47655  │
@@ -126,6 +129,22 @@ powershell -ExecutionPolicy Bypass -File scripts\run_conformance.ps1   # 4) 端�
 ```
 各脚本的参数与前置条件详见 **[docs/BUILD.md](docs/BUILD.md)**。
 
+### 6.1 自动构建与发布（GitHub Actions）
+
+仓库内置工作流 **[.github/workflows/build.yml](.github/workflows/build.yml)**：
+
+- 推送到 `main` 或提交 PR → 自动在 GitHub 机器上编译桌面端与 APK（用于验证代码可构建）
+- 推送形如 `v1.0.1` 的 tag → 额外把产物自动上传到对应 Release，并生成 `SHA256SUMS.txt`
+
+```powershell
+git tag v1.0.1
+git push origin main --tags
+```
+
+- 构建号与文件名来自 tag 名（`-Version` / `-PlasVersion` 参数），APK 内部的 `versionName`/`versionCode` 也随之变化
+- APK 签名需在仓库 **Settings → Secrets and variables → Actions** 配置三个 Secret：`LAS_KEYSTORE_BASE64`（密钥文件的 base64）、`LAS_KEYSTORE_PASSWORD`、`LAS_KEYSTORE_ALIAS`；**未配置时工作流仍会产出未签名的 APK**，仅供测试
+- 公开仓库使用 Actions **免费**
+
 ## 7. 交付产物（Releases）
 
 二进制产物体积较大，**不放入 Git 仓库**，随版本发布在 **[Releases](https://github.com/XiaoliuNya/LanAudioStream/releases/latest)**；`dist/SHA256SUMS.txt` 已入库，可校验下载到的文件是否完整。
@@ -151,7 +170,29 @@ powershell -ExecutionPolicy Bypass -File scripts\run_conformance.ps1   # 4) 端�
 
 开发者模式（写文件日志）已移除，两端都改用界面内的日志区：桌面端在主界面底部日志框，手机端在页面底部「日志」区，涵盖握手/断开、暂停发送与恢复、设置保存、格式与状态变更、异常堆栈等；手机端未捕获异常仍会写入 `Android/data/com.lasaudio/files/crash-*.txt`。详细步骤见 **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)**。
 
-## 10. 许可证
+## 10. 关于 AI 参与
+
+**本项目的全部代码、测试、文档与构建脚本均由 AI 编码助手（DSH，DeepSeek Harness）生成。** 人类参与者的角色是：
+
+1. 提出需求与验收标准
+2. 在实际使用中发现 Bug / 体验问题
+3. 把问题交回 AI 修复，并在真机上复验
+
+因此请注意：
+
+- 提交记录以 `AI-Assisted-by: DSH (DeepSeek Harness)` 标注 AI 协作（仓库内置钩子自动追加，见下）；刻意不使用 `Co-authored-by:`，否则 GitHub 会把其中的邮箱当作真实账号、误关联到同名用户
+- 文中所有「实测数据」都是 AI 在本机跑出的结果，人类未逐条复算——请把它们视为**开发者的自测结论**，而非第三方检测报告
+- AI 生成的代码可能存在未知缺陷或安全疏漏，用于生产环境前请自行评估（另见 §8）
+
+### 启用提交署名钩子（克隆后执行一次）
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+之后每次 `git commit` 会自动追加 AI 署名；Linux/macOS 上如提示钩子不可执行，先 `chmod +x .githooks/prepare-commit-msg`。若某次提交与 AI 无关，用 `git commit --no-verify` 跳过。
+
+## 11. 许可证
 
 本项目使用 [MIT 许可证](LICENSE)。
 
