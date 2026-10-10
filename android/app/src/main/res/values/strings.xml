@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LAN 音频串流</string>
+    <string name="channel_name">音频串流</string>
+    <string name="channel_desc">接收局域网桌面端音频</string>
+</resources>

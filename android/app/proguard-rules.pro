@@ -1,0 +1,2 @@
+-keep class io.github.jaredmdobson.concentus.** { *; }
+-keep class com.lasaudio.core.** { *; }
