@@ -5,7 +5,7 @@
 # 人类参与者主要负责提出需求、在使用中发现问题并交回 AI 修复。
 #
 # 注意：这里刻意**不用** `Co-authored-by:` —— GitHub 会把该 trailer 的邮箱
-# 解析为真实账号，曾经用 <dsh-ai@users.noreply.github.com> 时误把一位
+# 解析为真实账号：若使用「已存在的用户名 + users.noreply.github.com」形式，
 # 同名的陌生用户算成了共同作者。改用自定义 trailer，只作为纯文本说明。
 #
 # 启用方式（克隆后执行一次）：git config core.hooksPath .githooks
