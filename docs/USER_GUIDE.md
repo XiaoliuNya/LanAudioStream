@@ -4,6 +4,7 @@
 
 1. **同一局域网**：Windows 电脑与 Android 手机连接同一个 WiFi/路由器（不要用访客网络，客户端之间常被隔离）。
 2. **安装两端**：
+   - 下载：从 [Releases](https://github.com/XiaoliuNya/LanAudioStream/releases/latest) 获取 `LanAudioStream-1.0.0-win-x64.exe` 和 `LanAudioStream-1.0.0.apk`
    - 桌面端：直接双击 `LanAudioStream-1.0.0-win-x64.exe`（自包含，无需装 .NET）
    - 手机端：`adb install -r LanAudioStream-1.0.0.apk`，或把 APK 传到手机点击安装（需允许“安装未知来源应用”）
 3. **防火墙**：首次运行桌面端时 Windows 会弹窗，勾选“专用网络”并允许。

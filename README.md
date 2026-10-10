@@ -69,7 +69,7 @@ LanAudioStream/
 │  └─ keystore/lan-audio.jks       APK 签名密钥（本地生成，不入库）
 ├─ scripts/                        构建与自检脚本
 ├─ docs/                           协议 / 构建 / 使用文档
-└─ dist/                           产物（exe / apk / SHA256SUMS.txt）
+└─ dist/                           产物目录（exe/apk 不入库，随 Releases 发布；仅 SHA256SUMS.txt 入库）
 ```
 
 ---
@@ -77,9 +77,13 @@ LanAudioStream/
 ## 3. 快速开始
 
 ### 3.1 桌面端
+
+从 **[Releases](https://github.com/XiaoliuNya/LanAudioStream/releases/latest)** 下载 `LanAudioStream-1.0.0-win-x64.exe`（自包含单文件，无需安装 .NET），直接双击运行。
+
+或从源码自行构建（需 .NET 10 SDK）：
 ```powershell
-# 直接运行已构建好的单文件 exe（自包含，无需安装 .NET）
-dist\LanAudioStream-1.0.0-win-x64.exe
+scripts\build_desktop.ps1
+# 产物：dist\LanAudioStream-1.0.0-win-x64.exe
 ```
 1. 选择“默认播放设备（推荐）”
 2. 需要静音本机时勾选 **静音电脑扬声器**，再点 **保存设置**（静音后继续串流）
@@ -88,8 +92,10 @@ dist\LanAudioStream-1.0.0-win-x64.exe
 5. 之后每次改完音频设置，点 **保存设置** 才会生效并同步到手机端；点 **重置所有设置** 可一键恢复默认值
 
 ### 3.2 手机端
+
+从 **[Releases](https://github.com/XiaoliuNya/LanAudioStream/releases/latest)** 下载 `LanAudioStream-1.0.0.apk`，传到手机点击安装（需允许“安装未知来源应用”），或用 adb：
 ```powershell
-adb install -r dist\LanAudioStream-1.0.0.apk
+adb install -r LanAudioStream-1.0.0.apk
 ```
 1. 手机与电脑连同一个 WiFi
 2. 打开 App → 点击 **开始接收**（App 会自动发现桌面端并连接）
@@ -163,7 +169,10 @@ powershell -ExecutionPolicy Bypass -File scripts\run_conformance.ps1
 
 ---
 
-## 7. 交付产物（dist/）
+## 7. 交付产物（Releases）
+
+二进制产物体积较大，**不放入 Git 仓库**，随版本发布在 **[Releases](https://github.com/XiaoliuNya/LanAudioStream/releases/latest)**。
+`dist/SHA256SUMS.txt` 已入库，可用来校验下载到的文件是否完整。
 
 | 文件 | 大小 | SHA256 |
 |---|---|---|
