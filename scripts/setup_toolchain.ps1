@@ -22,10 +22,10 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-# 默认安装到仓库同级目录（仓库在 X\LanAudioStream 时，工具链在 X\_las_toolchain），可用 -ToolchainDir 覆盖
+# 默认安装到仓库内的 _las_toolchain（约 1.5 GB，已加入 .gitignore，不会入库），可用 -ToolchainDir 覆盖
 if (-not $ToolchainDir) {
     $repoRoot = Split-Path -Parent $PSScriptRoot
-    $ToolchainDir = Join-Path (Split-Path -Parent $repoRoot) "_las_toolchain"
+    $ToolchainDir = Join-Path $repoRoot "_las_toolchain"
 }
 New-Item -ItemType Directory -Force -Path $ToolchainDir | Out-Null
 

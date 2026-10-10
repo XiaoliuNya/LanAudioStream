@@ -17,7 +17,7 @@
 powershell -ExecutionPolicy Bypass -File scripts\setup_toolchain.ps1
 ```
 
-默认安装到**仓库同级**的 `_las_toolchain`（仓库位于 `X\LanAudioStream` 时即 `X\_las_toolchain`）：
+默认安装到**仓库内**的 `_las_toolchain`（约 1.5 GB，已加入 `.gitignore`，不会入库）：
 ```
 _las_toolchain\
 ├─ jdk-17.0.20.1+1\        JDK 17
@@ -70,7 +70,7 @@ powershell -ExecutionPolicy Bypass -File scripts\build_android.ps1 -Version 1.0.
 等价的手工命令：
 
 ```powershell
-$tc = (Resolve-Path "..\_las_toolchain").Path      # 默认位置（仓库同级）
+$tc = (Resolve-Path "_las_toolchain").Path      # 默认位置（在仓库内）
 $env:JAVA_HOME = "$tc\jdk-17.0.20.1+1"
 "sdk.dir=$($tc -replace '\\','/')/sdk" > android\local.properties
 cd android
@@ -105,7 +105,7 @@ powershell -ExecutionPolicy Bypass -File scripts\run_conformance.ps1
 `android/tools/CoreProbe.java` 直接把 APK 里那份纯 Java 核心代码跑在桌面 JVM 上：
 
 ```powershell
-$tc    = (Resolve-Path "..\_las_toolchain").Path   # 默认位置（仓库同级）
+$tc    = (Resolve-Path "_las_toolchain").Path   # 默认位置（在仓库内）
 $JAVAC = "$tc\jdk-17.0.20.1+1\bin\javac.exe"
 $JAVA  = "$tc\jdk-17.0.20.1+1\bin\java.exe"
 $CP    = "$tc\concentus.jar"   # 或 Gradle 缓存中的 concentus-1.0.2.jar
@@ -123,7 +123,7 @@ New-Item -ItemType Directory -Force build-probe | Out-Null
 ## 5. 真机安装
 
 ```powershell
-$env:ANDROID_HOME = (Resolve-Path "..\_las_toolchain").Path + "\sdk"   # 默认位置（仓库同级）
+$env:ANDROID_HOME = (Resolve-Path "_las_toolchain").Path + "\sdk"   # 默认位置（在仓库内）
 & "$env:ANDROID_HOME\platform-tools\adb.exe" install -r dist\LanAudioStream-1.0.0.apk
 & "$env:ANDROID_HOME\platform-tools\adb.exe" logcat -s "LANAudio"   # 如需排查
 ```

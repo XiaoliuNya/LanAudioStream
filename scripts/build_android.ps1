@@ -24,7 +24,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $androidDir = Join-Path $root "android"
 $dist = Join-Path $root "dist"
-$toolchain = Join-Path (Split-Path -Parent $root) "_las_toolchain"   # 内置工具链（仓库同级）
+$toolchain = if (Test-Path (Join-Path $root "_las_toolchain")) { Join-Path $root "_las_toolchain" } else { Join-Path (Split-Path -Parent $root) "_las_toolchain" }   # 内置工具链：优先仓库内，其次仓库同级
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
 function Find-JavaHome {

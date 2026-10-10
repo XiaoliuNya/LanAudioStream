@@ -37,3 +37,6 @@ android/.kotlin/
 build-probe/
 *.wav
 packets.bin
+
+# 本地构建工具链（JDK 17 + Android SDK + Gradle，约 1.5 GB，绝不入库）
+_las_toolchain/
