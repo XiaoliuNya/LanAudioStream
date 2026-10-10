@@ -395,6 +395,13 @@ Service 初始化与前台启动均加了保护，避免单点异常直接杀掉
 | 格式热切换偶发杂音 | 播放线程在锁外读 `decoder/frameSamples/pcmOut/clockOffsetUs`，而接收线程会整体替换它们 | 锁内取一次自洽快照（局部变量）；时钟字段改 volatile |
 | 指标刷新率 60 Hz 无效 | `metricsIntervalMs()` 有 50 ms 下限 | 下限改 16 ms，并让速率滑窗继续跟随（见 §10.7） |
 
+---
+
+## 11. 许可证
+
+本项目使用 [MIT 许可证](LICENSE)。
+
+
 
 
 
